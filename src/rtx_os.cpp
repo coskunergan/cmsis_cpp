@@ -28,6 +28,7 @@
 // This following part is specific to CMSIS-RTOS RTX implementation
 #include <functional>
 #include "rtx_os.h"
+#include "OSException.h"
 
 extern std::function<void()> idleHandler;
 
