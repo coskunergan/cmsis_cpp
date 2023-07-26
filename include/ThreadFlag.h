@@ -34,7 +34,7 @@ namespace cmsis
 {
 	struct thread_flags
 	{
-		typedef int mask_type;
+		typedef uint32_t mask_type;
 
 		static mask_type set(thread& t, mask_type mask);
 	};
@@ -49,9 +49,9 @@ namespace cmsis
 			enum class status { no_timeout, timeout };
 			enum class wait_flag : unsigned int
 			{
-				any = 0,
-				all = 1,
-				clear = 2
+				any = 1,
+				all = 2,
+				clear = 3
 			};
 
 			static mask_type set(mask_type mask);
