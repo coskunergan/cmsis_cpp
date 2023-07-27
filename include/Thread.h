@@ -37,7 +37,7 @@ namespace cmsis
 {
 	class thread_impl;
 
-	// STL like implementation
+	// STL like implementation 
 	class thread
 	{
 	public:
