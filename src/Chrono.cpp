@@ -80,7 +80,7 @@ int _gettimeofday(struct timeval* tp, void* tzvp)
 	{
 		uint64_t uu = convertDuration<std::chrono::microseconds>(osKernelGetTickCount(), osKernelGetTickFreq()).count();
 		tp->tv_sec = static_cast<time_t>(uu / 1000000);
-		tp->tv_usec = static_cast<long>(uu % 100000);
+		tp->tv_usec = static_cast<long>(uu % 1000000);
 	}
 
 	if (tzvp != NULL)

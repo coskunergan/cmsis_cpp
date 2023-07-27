@@ -57,7 +57,7 @@ namespace cmsis
 			static mask_type set(mask_type mask);
 			static mask_type get();
 
-			static mask_type clear(mask_type mask = static_cast<mask_type>(-1));
+			static mask_type clear(mask_type mask = static_cast<mask_type>(0x7FFFFFFF));
 			static mask_type wait(mask_type mask, wait_flag flg = wait_flag::any);
 
 			template<class Rep, class Period>
@@ -72,10 +72,10 @@ namespace cmsis
 				return wait_for(mask, wait_flag::any, rel_time, flagValue);
 			}
 
-			template<class Clock, class Duration>
+			template<class Clock, class Duration>//dont use, this is bad impl. because can be enter an high prio. worker between "Clock::now()" and abs_time !!
 			static status wait_until(mask_type mask, wait_flag flg, const std::chrono::time_point<Clock, Duration>& abs_time, mask_type& flagValue)
-			{
-				return wait_for(mask, flg, abs_time - Clock::now(), flagValue);
+			{				
+				return wait_for(mask, flg, std::chrono::duration_cast<std::chrono::microseconds>(abs_time - Clock::now()), flagValue);
 			}
 
 			template<class Clock, class Duration>
