@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,98 +31,100 @@
 
 namespace cmsis
 {
-	namespace internal
-	{
-		base_semaphore::base_semaphore(std::ptrdiff_t max, std::ptrdiff_t desired) :
-			m_id(0)
-		{
-			m_id = osSemaphoreNew(static_cast<uint32_t>(max), static_cast<uint32_t>(desired), NULL);
-			if (m_id == 0)
-			{
+    namespace internal
+    {
+        base_semaphore::base_semaphore(std::ptrdiff_t max, std::ptrdiff_t desired) :
+            m_id(0)
+        {
+            m_id = osSemaphoreNew(static_cast<uint32_t>(max), static_cast<uint32_t>(desired), NULL);
+            if(m_id == 0)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(osError, os_category(), "osSemaphoreNew");
+                throw std::system_error(osError, os_category(), "osSemaphoreNew");
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
-		}
+            }
+        }
 
-		base_semaphore::~base_semaphore() noexcept(false)
-		{
-			osStatus_t sta = osSemaphoreDelete(m_id);
-			if (sta != osOK)
-			{
+        base_semaphore::~base_semaphore() noexcept(false)
+        {
+            osStatus_t sta = osSemaphoreDelete(m_id);
+            if(sta != osOK)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreDelete", m_id));
+                throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreDelete", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
-		}
+            }
+        }
 
-		void base_semaphore::release(std::ptrdiff_t update)
-		{
-			while (update--)
-			{
-				osStatus_t sta = osSemaphoreRelease(m_id);
-				if (sta != osOK)
-				{
+        void base_semaphore::release(std::ptrdiff_t update)
+        {
+            while(update--)
+            {
+                osStatus_t sta = osSemaphoreRelease(m_id);
+                if(sta != osOK)
+                {
 #ifdef __cpp_exceptions
-					throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreRelease", m_id));
+                    throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreRelease", m_id));
 #else
-					std::terminate();
+                    std::terminate();
 #endif
-				}
-			}
-		}
+                }
+            }
+        }
 
-		void base_semaphore::acquire()
-		{
-			osStatus_t sta = osSemaphoreAcquire(m_id, osWaitForever);
-			if (sta != osOK)
-			{
+        void base_semaphore::acquire()
+        {
+            osStatus_t sta = osSemaphoreAcquire(m_id, osWaitForever);
+            if(sta != osOK)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreAcquire", m_id));
+                throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreAcquire", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
-		}
+            }
+        }
 
-		bool base_semaphore::try_acquire() noexcept
-		{
-			return (osSemaphoreAcquire(m_id, 0) == osOK);
-		}
+        bool base_semaphore::try_acquire() noexcept
+        {
+            return (osSemaphoreAcquire(m_id, 0) == osOK);
+        }
 
-		bool base_semaphore::try_acquire_for_usec(std::chrono::microseconds usec)
-		{
-			if (usec < std::chrono::microseconds::zero())
-			{
+        bool base_semaphore::try_acquire_for_usec(std::chrono::microseconds usec)
+        {
+            if(usec < std::chrono::microseconds::zero())
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(osErrorParameter, os_category(), "semaphore: negative timer");
+                throw std::system_error(osErrorParameter, os_category(), "semaphore: negative timer");
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
+            }
 
-			uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
-			if (timeout > std::numeric_limits<uint32_t>::max())
-				timeout = osWaitForever;
+            uint32_t timeout = static_cast<uint32_t>(
+                                   (usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) /
+                                   std::chrono::microseconds::period::den);
+            if(timeout > std::numeric_limits<uint32_t>::max())
+                timeout = osWaitForever;
 
-			osStatus_t sta = osSemaphoreAcquire(m_id, timeout);
-			if (timeout == 0 && sta == osErrorResource)
-				return false;
+            osStatus_t sta = osSemaphoreAcquire(m_id, timeout);
+            if(timeout == 0 && sta == osErrorResource)
+                return false;
 
-			if (sta != osOK && sta != osErrorTimeout)
-			{
+            if(sta != osOK && sta != osErrorTimeout)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreAcquire", m_id));
+                throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreAcquire", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
+            }
 
-			return (sta == osOK);
-		}
-	}
-}
+            return (sta == osOK);
+        }
+    } // namespace internal
+} // namespace cmsis

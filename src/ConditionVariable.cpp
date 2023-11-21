@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,59 +27,59 @@
 
 #include "ConditionVariable.h"
 #include "OSException.h"
-#include "cmsis_os2.h"
 #include "Semaphore.h"
+#include "cmsis_os2.h"
 
 namespace cmsis
 {
-	void condition_variable::notify_one() noexcept
-	{
-		std::lock_guard<cmsis::mutex> lg(m_mutex);
-		if (!m_wait.empty())
-		{
-			m_wait.front()->release();
-			m_wait.pop_front();
-		}
-	}
+    void condition_variable::notify_one() noexcept
+    {
+        std::lock_guard<cmsis::mutex> lg(m_mutex);
+        if(!m_wait.empty())
+        {
+            m_wait.front()->release();
+            m_wait.pop_front();
+        }
+    }
 
-	void condition_variable::notify_all() noexcept
-	{
-		std::lock_guard<cmsis::mutex> lg(m_mutex);
-		for(auto psema : m_wait)
-			psema->release();
+    void condition_variable::notify_all() noexcept
+    {
+        std::lock_guard<cmsis::mutex> lg(m_mutex);
+        for(auto psema : m_wait)
+            psema->release();
 
-		m_wait.clear();
-	}
+        m_wait.clear();
+    }
 
-	void condition_variable::wait(std::unique_lock<cmsis::mutex>& lock)
-	{
-	    wait_for(lock, std::chrono::microseconds::max());
-	}
+    void condition_variable::wait(std::unique_lock<cmsis::mutex> &lock)
+    {
+        wait_for(lock, std::chrono::microseconds::max());
+    }
 
-	cmsis::cv_status condition_variable::wait_for_usec(std::unique_lock<cmsis::mutex>& lock, std::chrono::microseconds usec)
-	{
-		if (!lock.owns_lock())
-			std::terminate();
+    cmsis::cv_status
+    condition_variable::wait_for_usec(std::unique_lock<cmsis::mutex> &lock, std::chrono::microseconds usec)
+    {
+        if(!lock.owns_lock())
+            std::terminate();
 
-		cmsis::binary_semaphore sema(0);
-		std::list<cmsis::binary_semaphore*>::iterator it;
-		{
-			std::lock_guard<std::mutex> lg(m_mutex);
-			it = m_wait.insert(m_wait.end(), &sema);
-		}
+        cmsis::binary_semaphore sema(0);
+        std::list<cmsis::binary_semaphore *>::iterator it;
+        {
+            std::lock_guard<std::mutex> lg(m_mutex);
+            it = m_wait.insert(m_wait.end(), &sema);
+        }
 
-		lock.unlock();
-		bool st = sema.try_acquire_for(usec);
-		lock.lock();
+        lock.unlock();
+        bool st = sema.try_acquire_for(usec);
+        lock.lock();
 
-		if (!st)
-		{
-			std::lock_guard<std::mutex> lg(m_mutex);
-			m_wait.erase(it);
-			return cmsis::cv_status::timeout;
-		}
+        if(!st)
+        {
+            std::lock_guard<std::mutex> lg(m_mutex);
+            m_wait.erase(it);
+            return cmsis::cv_status::timeout;
+        }
 
-		return cmsis::cv_status::no_timeout;
-	}
-}
-
+        return cmsis::cv_status::no_timeout;
+    }
+} // namespace cmsis

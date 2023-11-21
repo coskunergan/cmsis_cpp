@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,99 +31,99 @@
 
 namespace cmsis
 {
-	namespace internal
-	{
-		base_memory_pool::base_memory_pool(size_t count, size_t n) :
-			m_id(0)
-		{
-			m_id = osMemoryPoolNew(static_cast<uint32_t>(count), static_cast<uint32_t>(n), NULL);
-			if (!m_id)
+    namespace internal
+    {
+        base_memory_pool::base_memory_pool(size_t count, size_t n) :
+            m_id(0)
+        {
+            m_id = osMemoryPoolNew(static_cast<uint32_t>(count), static_cast<uint32_t>(n), NULL);
+            if(!m_id)
 #ifdef __cpp_exceptions
-				throw std::system_error(osError, os_category(), "osMemoryPoolNew");
+                throw std::system_error(osError, os_category(), "osMemoryPoolNew");
 #else
-				std::terminate();
+                std::terminate();
 #endif
-		}
+        }
 
-		base_memory_pool::base_memory_pool(base_memory_pool&& other) :
-			m_id(other.m_id)
-		{
-			other.m_id = 0;
-		}
+        base_memory_pool::base_memory_pool(base_memory_pool &&other) :
+            m_id(other.m_id)
+        {
+            other.m_id = 0;
+        }
 
-		base_memory_pool::~base_memory_pool() noexcept(false)
-		{
-			if (m_id)
-			{
-				osStatus_t sta = osMemoryPoolDelete(m_id);
-				if (sta != osOK)
+        base_memory_pool::~base_memory_pool() noexcept(false)
+        {
+            if(m_id)
+            {
+                osStatus_t sta = osMemoryPoolDelete(m_id);
+                if(sta != osOK)
 #ifdef __cpp_exceptions
-					throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolDelete", m_id));
+                    throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolDelete", m_id));
 #else
-					std::terminate();
+                    std::terminate();
 #endif
-			}
-		}
+            }
+        }
 
-		base_memory_pool& base_memory_pool::operator=(base_memory_pool&& other)
-		{
-			if (this != &other)
-			{
-				if (m_id)
-				{
-					osStatus_t sta = osMemoryPoolDelete(m_id);
-					if (sta != osOK)
+        base_memory_pool &base_memory_pool::operator=(base_memory_pool &&other)
+        {
+            if(this != &other)
+            {
+                if(m_id)
+                {
+                    osStatus_t sta = osMemoryPoolDelete(m_id);
+                    if(sta != osOK)
 #ifdef __cpp_exceptions
-						throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolDelete", m_id));
+                        throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolDelete", m_id));
 #else
-						std::terminate();
+                        std::terminate();
 #endif
-					m_id = 0;
-				}
+                    m_id = 0;
+                }
 
-				std::swap(m_id, other.m_id);
-			}
+                std::swap(m_id, other.m_id);
+            }
 
-			return *this;
-		}
+            return *this;
+        }
 
-		void* base_memory_pool::allocate(size_t n)
-		{
-			if (n != 1)
+        void *base_memory_pool::allocate(size_t n)
+        {
+            if(n != 1)
 #ifdef __cpp_exceptions
-				throw std::bad_alloc();
+                throw std::bad_alloc();
 #else
-				return nullptr;
+                return nullptr;
 #endif
 
-			void* p = osMemoryPoolAlloc(m_id, osWaitForever);
+            void *p = osMemoryPoolAlloc(m_id, osWaitForever);
 #ifdef __cpp_exceptions
-			if (!p)
-				throw std::bad_alloc();
+            if(!p)
+                throw std::bad_alloc();
 #endif
 
-			return p;
-		}
+            return p;
+        }
 
-		void base_memory_pool::deallocate(void* p)
-		{
-			osStatus_t sta = osMemoryPoolFree(m_id, p);
-			if (sta != osOK)
+        void base_memory_pool::deallocate(void *p)
+        {
+            osStatus_t sta = osMemoryPoolFree(m_id, p);
+            if(sta != osOK)
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolFree", m_id));
+                throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolFree", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
-		}
+        }
 
-		size_t base_memory_pool::max_size() const noexcept
-		{
-			return osMemoryPoolGetCapacity(m_id);
-		}
+        size_t base_memory_pool::max_size() const noexcept
+        {
+            return osMemoryPoolGetCapacity(m_id);
+        }
 
-		size_t base_memory_pool::size() const noexcept
-		{
-			return osMemoryPoolGetCount(m_id);
-		}
-	}
-}
+        size_t base_memory_pool::size() const noexcept
+        {
+            return osMemoryPoolGetCount(m_id);
+        }
+    } // namespace internal
+} // namespace cmsis

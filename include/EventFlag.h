@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,80 +28,97 @@
 #ifndef CMSIS_EVENTFLAG_H_
 #define CMSIS_EVENTFLAG_H_
 
-#include <memory>
+#include "WaitFlag.h"
 #include <chrono>
 
 namespace cmsis
 {
-	class event
-	{
-	public:
-		typedef void* native_handle_type;
-		typedef uint32_t mask_type;
+    class event
+    {
+    public:
+        typedef void *native_handle_type;
+        typedef uint32_t mask_type;
 
-		enum class status { no_timeout, timeout };
-		enum class wait_flag : unsigned int
-		{
-			any = 0,
-			all = 1,
-			clear = 2
-		};
+        enum class status
+        {
+            no_timeout,
+            timeout
+        };
 
-		event(mask_type mask = 0);
-		event(const event&) = delete;
-		event(event&& evt) noexcept;
-		~event() noexcept(false);
+        event(mask_type mask = 0);
+        event(const event &) = delete;
+        event(event &&evt) noexcept;
+        ~event() noexcept(false);
 
-		event& operator=(const event&) = delete;
-		event& operator=(event&& evt) noexcept;
+        event &operator=(const event &) = delete;
+        event &operator=(event &&evt) noexcept;
 
-		void swap(event& evt) noexcept;
+        void swap(event &evt) noexcept;
 
-		mask_type get() const;
+        mask_type get() const;
 
-		mask_type set(mask_type mask);
-		mask_type clear(mask_type mask = static_cast<mask_type>(-1));
-		mask_type wait(mask_type mask, wait_flag flg = wait_flag::any);
+        mask_type set(mask_type mask);
+        mask_type clear(mask_type mask = static_cast<mask_type>(0x7FFFFFFF));
+        mask_type wait(mask_type mask, wait_flag flg = wait_flag::any);
 
-		template<class Rep, class Period>
-		status wait_for(mask_type mask, wait_flag flg, const std::chrono::duration<Rep, Period>& rel_time, mask_type& flagValue)
-		{
-			return wait_for_usec(mask, flg, rel_time, flagValue);
-		}
+        template <class Rep, class Period>
+        status wait_for(
+            mask_type mask,
+            wait_flag flg,
+            const std::chrono::duration<Rep, Period> &rel_time,
+            mask_type &flagValue)
+        {
+            return wait_for_usec(mask, flg, rel_time, flagValue);
+        }
 
-		template<class Rep, class Period>
-		status wait_for(mask_type mask, const std::chrono::duration<Rep, Period>& rel_time, mask_type& flagValue)
-		{
-			return wait_for(mask, wait_flag::any, rel_time, flagValue);
-		}
+        template <class Rep, class Period>
+        status wait_for(mask_type mask, const std::chrono::duration<Rep, Period> &rel_time, mask_type &flagValue)
+        {
+            return wait_for(mask, wait_flag::any, rel_time, flagValue);
+        }
 
-		template<class Clock, class Duration>
-		status wait_until(mask_type mask, wait_flag flg, const std::chrono::time_point<Clock, Duration>& abs_time, mask_type& flagValue)
-		{
-			return wait_for(mask, flg, abs_time - Clock::now(), flagValue);
-		}
+        template <class Clock, class Duration>
+        status wait_until(
+            mask_type mask,
+            wait_flag flg,
+            const std::chrono::time_point<Clock, Duration> &abs_time,
+            mask_type &flagValue)
+        {
+            auto rel_time = abs_time - Clock::now();
+            if(rel_time < std::chrono::microseconds::zero())
+                return status::timeout;
 
-		template<class Clock, class Duration>
-		status wait_until(mask_type mask, const std::chrono::time_point<Clock, Duration>& abs_time, mask_type& flagValue)
-		{
-			return wait_until(mask, wait_flag::any, abs_time, flagValue);
-		}
+            return wait_for(mask, flg, rel_time, flagValue);
+        }
 
-		native_handle_type native_handle() noexcept { return m_id; }
+        template <class Clock, class Duration>
+        status
+        wait_until(mask_type mask, const std::chrono::time_point<Clock, Duration> &abs_time, mask_type &flagValue)
+        {
+            return wait_until(mask, wait_flag::any, abs_time, flagValue);
+        }
 
-	private:
-		status wait_for_usec(mask_type mask, wait_flag flg, std::chrono::microseconds usec, mask_type& flagValue);
+        native_handle_type native_handle() noexcept
+        {
+            return m_id;
+        }
 
-	private:
-		native_handle_type m_id; // event flag identifier
-	};
+    private:
+        status wait_for_usec(mask_type mask, wait_flag flg, std::chrono::microseconds usec, mask_type &flagValue);
 
-	inline void	swap(event& __x, event& __y) noexcept { __x.swap(__y); }
-}
+    private:
+        native_handle_type m_id; // event flag identifier
+    };
+
+    inline void swap(event &__x, event &__y) noexcept
+    {
+        __x.swap(__y);
+    }
+} // namespace cmsis
 
 namespace sys
 {
-	using event = cmsis::event;
+    using event = cmsis::event;
 }
 
 #endif // CMSIS_EVENTFLAG_H_

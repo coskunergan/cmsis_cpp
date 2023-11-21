@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,14 +35,14 @@
 
 namespace cmsis
 {
-	const std::error_category& os_category();
-	const std::error_category& flags_category();
+    const std::error_category &os_category();
+    const std::error_category &flags_category();
 
-	namespace internal
-	{
-		std::string str_error(const std::string& func, const void* id);
-	}
-}
+    namespace internal
+    {
+        std::string str_error(const std::string &func, const void *id);
+    }
+} // namespace cmsis
 
 #endif // __cpp_exceptions
 #endif // CMSIS_OSEXCEPTION_H_

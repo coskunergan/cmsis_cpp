@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,38 +25,38 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <mutex>
 #include "Threads.h"
 #include "OS.h"
 #include "cmsis_os2.h"
+#include <mutex>
 
 namespace cmsis
 {
-	size_t threads::count() noexcept
-	{
-		return static_cast<size_t>(osThreadGetCount());
-	}
+    size_t threads::count() noexcept
+    {
+        return static_cast<size_t>(osThreadGetCount());
+    }
 
-	std::vector<threads::info> threads::enumerate() noexcept
-	{
-		cmsis::dispatch dptch;
-		std::lock_guard<cmsis::dispatch> lg(dptch);
+    std::vector<threads::info> threads::enumerate() noexcept
+    {
+        cmsis::dispatch dptch;
+        std::lock_guard<cmsis::dispatch> lg(dptch);
 
-		std::vector<osThreadId_t> thread_array(count());
-		uint32_t nb = osThreadEnumerate(thread_array.data(), thread_array.size());
+        std::vector<osThreadId_t> thread_array(count());
+        uint32_t nb = osThreadEnumerate(thread_array.data(), thread_array.size());
 
-		std::vector<threads::info> infos(nb);
-		for(size_t i = 0; i < infos.size(); ++i)
-		{
-			osThreadId_t tid = thread_array[i];
-			infos[i].handle = tid;
-			infos[i].name = osThreadGetName(tid);
-			infos[i].state = static_cast<size_t>(osThreadGetState(tid));
-			infos[i].priority = static_cast<size_t>(osThreadGetPriority(tid));
-			infos[i].stack_size = static_cast<size_t>(osThreadGetStackSize(tid));
-			infos[i].stack_space = static_cast<size_t>(osThreadGetStackSpace(tid));
-		}
+        std::vector<threads::info> infos(nb);
+        for(size_t i = 0; i < infos.size(); ++i)
+        {
+            osThreadId_t tid = thread_array[i];
+            infos[i].handle = tid;
+            infos[i].name = osThreadGetName(tid);
+            infos[i].state = static_cast<size_t>(osThreadGetState(tid));
+            infos[i].priority = static_cast<size_t>(osThreadGetPriority(tid));
+            infos[i].stack_size = static_cast<size_t>(osThreadGetStackSize(tid));
+            infos[i].stack_space = static_cast<size_t>(osThreadGetStackSpace(tid));
+        }
 
-		return infos;
-	}
-}
+        return infos;
+    }
+} // namespace cmsis

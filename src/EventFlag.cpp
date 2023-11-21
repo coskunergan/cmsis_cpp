@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,167 +31,170 @@
 
 namespace cmsis
 {
-	/**
-	 * Event flag constructor
-	 * @throw std::system_error if an error occurs
-	 */
-	event::event(mask_type mask)
-		: m_id(0)
-	{
-		m_id = osEventFlagsNew(NULL);	
-		if (m_id == 0)
+    /**
+     * Event flag constructor
+     * @throw std::system_error if an error occurs
+     */
+    event::event(mask_type mask) :
+        m_id(0)
+    {
+        m_id = osEventFlagsNew(NULL);
+        if(m_id == 0)
 #ifdef __cpp_exceptions
-			throw std::system_error(osError, os_category(), "osEventFlagsNew");
+            throw std::system_error(osError, os_category(), "osEventFlagsNew");
 #else
-			std::terminate();
+            std::terminate();
 #endif
 
-		if (mask != 0)
-			set(mask);
-	}
+        if(mask != 0)
+            set(mask);
+    }
 
-	event::event(event&& evt) noexcept
-		: m_id(0)
-	{
-		swap(evt);
-	}
+    event::event(event &&evt) noexcept :
+        m_id(0)
+    {
+        swap(evt);
+    }
 
-	/**
-	 * Event flag destructor
-	 */
-	event::~event() noexcept(false)
-	{
-		if (m_id)
-		{
-			osStatus_t sta = osEventFlagsDelete(m_id);
-			if (sta != osOK)
+    /**
+     * Event flag destructor
+     */
+    event::~event() noexcept(false)
+    {
+        if(m_id)
+        {
+            osStatus_t sta = osEventFlagsDelete(m_id);
+            if(sta != osOK)
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osEventFlagsDelete", m_id));
+                throw std::system_error(sta, os_category(), internal::str_error("osEventFlagsDelete", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
-		}
-	}
+        }
+    }
 
-	void event::swap(event& evt) noexcept
-	{
-		std::swap(m_id, evt.m_id);
-	}
+    void event::swap(event &evt) noexcept
+    {
+        std::swap(m_id, evt.m_id);
+    }
 
-	event& event::operator=(event&& evt) noexcept
-	{
-		swap(evt);
-		return *this;
-	}
+    event &event::operator=(event &&evt) noexcept
+    {
+        swap(evt);
+        return *this;
+    }
 
-	/**
-	 * Get current event flag pattern.
-	 * @throw std::system_error if an error occurs
-	 */
-	event::mask_type event::get() const
-	{
-		int32_t flags = osEventFlagsGet(m_id);
-		if (flags < 0)
+    /**
+     * Get current event flag pattern.
+     * @throw std::system_error if an error occurs
+     */
+    event::mask_type event::get() const
+    {
+        int32_t flags = osEventFlagsGet(m_id);
+        if(flags < 0)
 #ifdef __cpp_exceptions
-			throw std::system_error(flags, os_category(), internal::str_error("osEventFlagsGet", m_id));
+            throw std::system_error(flags, os_category(), internal::str_error("osEventFlagsGet", m_id));
 #else
-			std::terminate();
-#endif
-
-		return flags;	
-	}
-
-	/**
-	 * Sets an event flag.
-	 * @throw std::system_error if an error occurs
-	 */
-	event::mask_type event::set(mask_type mask)
-	{
-		int32_t flags = osEventFlagsSet(m_id, mask);
-		if (flags < 0)
-#ifdef __cpp_exceptions
-			throw std::system_error(flags, flags_category(), internal::str_error("osEventFlagsSet", m_id));
-#else
-			std::terminate();
+            std::terminate();
 #endif
 
-		return flags;
-	}
+        return flags;
+    }
 
-	/**
-	 * Clears an event flag.
-	 * @throw std::system_error if an error occurs
-	 */
-	event::mask_type event::clear(mask_type mask)
-	{
-		int32_t flags = osEventFlagsClear(m_id, mask);
-		if (flags < 0)
+    /**
+     * Sets an event flag.
+     * @throw std::system_error if an error occurs
+     */
+    event::mask_type event::set(mask_type mask)
+    {
+        int32_t flags = osEventFlagsSet(m_id, mask);
+        if(flags < 0)
 #ifdef __cpp_exceptions
-			throw std::system_error(flags, flags_category(), internal::str_error("osEventFlagsClear", m_id));
+            throw std::system_error(flags, flags_category(), internal::str_error("osEventFlagsSet", m_id));
 #else
-			std::terminate();
+            std::terminate();
 #endif
 
-		return flags;
-	}
+        return flags;
+    }
 
-	/**
-	 * Wait until an event flag is set
-	 * @param mask
-	 * @return the event flag value
-	 * @throw std::system_error if an error occurs
-	 */
-	event::mask_type event::wait(mask_type mask, wait_flag flg)
-	{
-		uint32_t option = (static_cast<unsigned int>(flg) & static_cast<unsigned int>(wait_flag::any)) ? osFlagsWaitAny : osFlagsWaitAll;
-		if ((static_cast<unsigned int>(flg) & static_cast<unsigned int>(wait_flag::clear)) == 0)
-			option |= osFlagsNoClear;
-
-		int32_t flags = osEventFlagsWait(m_id, mask, option, osWaitForever);
-		if (flags < 0)
+    /**
+     * Clears an event flag.
+     * @throw std::system_error if an error occurs
+     */
+    event::mask_type event::clear(mask_type mask)
+    {
+        int32_t flags = osEventFlagsClear(m_id, mask);
+        if(flags < 0)
 #ifdef __cpp_exceptions
-			throw std::system_error(flags, flags_category(), internal::str_error("osEventFlagsWait", m_id));
+            throw std::system_error(flags, flags_category(), internal::str_error("osEventFlagsClear", m_id));
 #else
-			std::terminate();
+            std::terminate();
 #endif
 
-		return flags;
-	}
+        return flags;
+    }
 
-	/**
-	 * Wait until an event flag is set or a timeout occurs
-	 * @param mask
-	 * @return the event flag value
-	 * @throw std::system_error if an error occurs
-	 */
-	event::status event::wait_for_usec(mask_type mask, wait_flag flg, std::chrono::microseconds usec, mask_type& flagValue)
-	{
-		if (usec < std::chrono::microseconds::zero())
+    /**
+     * Wait until an event flag is set
+     * @param mask
+     * @return the event flag value
+     * @throw std::system_error if an error occurs
+     */
+    event::mask_type event::wait(mask_type mask, wait_flag flg)
+    {
+        uint32_t option = ((flg & wait_flag::all) == wait_flag::all) ? osFlagsWaitAll : osFlagsWaitAny;
+        if((flg & wait_flag::no_clear) == wait_flag::no_clear)
+            option |= osFlagsNoClear;
+
+        int32_t flags = osEventFlagsWait(m_id, mask, option, osWaitForever);
+        if(flags < 0)
 #ifdef __cpp_exceptions
-			throw std::system_error(osErrorParameter, os_category(), "event: negative timer");
+            throw std::system_error(flags, flags_category(), internal::str_error("osEventFlagsWait", m_id));
 #else
-			std::terminate();
+            std::terminate();
 #endif
 
-		uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
-		if (timeout > std::numeric_limits<uint32_t>::max())
-			timeout = osWaitForever;
+        return flags;
+    }
 
-		uint32_t option = (static_cast<unsigned int>(flg) & static_cast<unsigned int>(wait_flag::any)) ? osFlagsWaitAny : osFlagsWaitAll;
-		if ((static_cast<unsigned int>(flg) & static_cast<unsigned int>(wait_flag::clear)) == 0)
-			option |= osFlagsNoClear;
-
-		flagValue = osEventFlagsWait(m_id, mask, option, timeout);
-		if (timeout == 0 && flagValue == osFlagsErrorResource)
-			return status::timeout;
-
-		if ((flagValue & osFlagsError) && flagValue != osFlagsErrorTimeout)
+    /**
+     * Wait until an event flag is set or a timeout occurs
+     * @param mask
+     * @return the event flag value
+     * @throw std::system_error if an error occurs
+     */
+    event::status
+    event::wait_for_usec(mask_type mask, wait_flag flg, std::chrono::microseconds usec, mask_type &flagValue)
+    {
+        if(usec < std::chrono::microseconds::zero())
 #ifdef __cpp_exceptions
-			throw std::system_error(flagValue, flags_category(), internal::str_error("osEventFlagsWait", m_id));
+            throw std::system_error(osErrorParameter, os_category(), "event: negative timer");
 #else
-			std::terminate();
+            std::terminate();
 #endif
 
-		return (flagValue == osFlagsErrorTimeout ? status::timeout : status::no_timeout);
-	}
-}
+        uint32_t timeout = static_cast<uint32_t>(
+                               (usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) /
+                               std::chrono::microseconds::period::den);
+        if(timeout > std::numeric_limits<uint32_t>::max())
+            timeout = osWaitForever;
+
+        uint32_t option = ((flg & wait_flag::all) == wait_flag::all) ? osFlagsWaitAll : osFlagsWaitAny;
+        if((flg & wait_flag::no_clear) == wait_flag::no_clear)
+            option |= osFlagsNoClear;
+
+        flagValue = osEventFlagsWait(m_id, mask, option, timeout);
+        if(timeout == 0 && flagValue == osFlagsErrorResource)
+            return status::timeout;
+
+        if((flagValue & osFlagsError) && flagValue != osFlagsErrorTimeout)
+#ifdef __cpp_exceptions
+            throw std::system_error(flagValue, flags_category(), internal::str_error("osEventFlagsWait", m_id));
+#else
+            std::terminate();
+#endif
+
+        return (flagValue == osFlagsErrorTimeout ? status::timeout : status::no_timeout);
+    }
+} // namespace cmsis

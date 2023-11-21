@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,32 +28,32 @@
 #ifndef CPP_CMSIS_THREADS_H_
 #define CPP_CMSIS_THREADS_H_
 
-#include <vector>
 #include "Thread.h"
+#include <vector>
 
 namespace cmsis
 {
-	class threads
-	{
-	public:
-		struct info
-		{
-			thread::native_handle_type handle;
-			const char* name;
-			size_t state;
-			size_t priority;
-			size_t stack_size;
-			size_t stack_space;
-		};
+    class threads
+    {
+    public:
+        struct info
+        {
+            thread::native_handle_type handle;
+            const char *name;
+            size_t state;
+            size_t priority;
+            size_t stack_size;
+            size_t stack_space;
+        };
 
-		static size_t count() noexcept;
-		static std::vector<info> enumerate() noexcept;
-	};
-}
+        static size_t count() noexcept;
+        static std::vector<info> enumerate() noexcept;
+    };
+} // namespace cmsis
 
 namespace sys
 {
-	using threads = cmsis::threads;
+    using threads = cmsis::threads;
 }
 
 #endif // CPP_CMSIS_THREADS_H_

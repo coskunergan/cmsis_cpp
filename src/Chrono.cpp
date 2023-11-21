@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,72 +25,75 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <type_traits>
 #include "Chrono.h"
 #include "cmsis_os2.h"
+#include <type_traits>
 
 namespace
 {
-	template<class D>
-	D convertDuration(uint64_t count, uint32_t freq)
-	{
-		return D((count * D::period::den) / (freq * D::period::num));
-	}
-}
+    template <class D> D convertDuration(uint64_t count, uint32_t freq)
+    {
+        return D((count * D::period::den) / (freq * D::period::num));
+    }
+} // namespace
 
 namespace cmsis
 {
-	namespace chrono
-	{
-		system_clock::time_point system_clock::now() noexcept
-		{
-			return time_point(convertDuration<system_clock::duration>(osKernelGetTickCount(), osKernelGetTickFreq()));
-		}
+    namespace chrono
+    {
+        system_clock::time_point system_clock::now() noexcept
+        {
+            return time_point(convertDuration<system_clock::duration>(osKernelGetTickCount(), osKernelGetTickFreq()));
+        }
 
-		std::time_t system_clock::to_time_t(const time_point& __t)
-		{
-			return std::time_t(std::chrono::duration_cast<std::chrono::seconds>(__t.time_since_epoch()).count());
-		}
+        std::time_t system_clock::to_time_t(const time_point &__t)
+        {
+            return std::time_t(std::chrono::duration_cast<std::chrono::seconds>(__t.time_since_epoch()).count());
+        }
 
-		system_clock::time_point system_clock::from_time_t(std::time_t __t)
-		{
-			typedef std::chrono::time_point<system_clock, std::chrono::seconds> __from;
-			return std::chrono::time_point_cast<system_clock::duration>(__from(std::chrono::seconds(__t)));
-		}
+        system_clock::time_point system_clock::from_time_t(std::time_t __t)
+        {
+            typedef std::chrono::time_point<system_clock, std::chrono::seconds> __from;
+            return std::chrono::time_point_cast<system_clock::duration>(__from(std::chrono::seconds(__t)));
+        }
 
-		high_resolution_clock::time_point high_resolution_clock::now() noexcept
-		{
-			return time_point(convertDuration<high_resolution_clock::duration>(osKernelGetSysTimerCount(), osKernelGetSysTimerFreq()));
-		}
-	}
-}
+        high_resolution_clock::time_point high_resolution_clock::now() noexcept
+        {
+            return time_point(convertDuration<high_resolution_clock::duration>(
+                                  osKernelGetSysTimerCount(),
+                                  osKernelGetSysTimerFreq()));
+        }
+    } // namespace chrono
+} // namespace cmsis
 
 #if !defined(OS_USE_SEMIHOSTING)
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #include <sys/time.h>
 
-int _gettimeofday (struct timeval*, void*);
+int _gettimeofday(struct timeval *, void *);
 
-int _gettimeofday(struct timeval* tp, void* tzvp)
+int _gettimeofday(struct timeval *tp, void *tzvp)
 {
-	if (tp != NULL)
-	{
-		uint64_t uu = convertDuration<std::chrono::microseconds>(osKernelGetTickCount(), osKernelGetTickFreq()).count();
-		tp->tv_sec = static_cast<time_t>(uu / 1000000);
-		tp->tv_usec = static_cast<long>(uu % 1000000);
-	}
+    if(tp != NULL)
+    {
+        uint64_t now =
+            convertDuration<std::chrono::microseconds>(osKernelGetTickCount(), osKernelGetTickFreq()).count();
+        tp->tv_sec = static_cast<time_t>(now / 1000000);
+        tp->tv_usec = static_cast<long>(now % 1000000);
+    }
 
-	if (tzvp != NULL)
-	{
-		struct timezone* tzp = static_cast<struct timezone*>(tzvp);
-		tzp->tz_minuteswest = 0;
-		tzp->tz_dsttime = 0;
-	}
+    if(tzvp != NULL)
+    {
+        struct timezone *tzp = static_cast<struct timezone *>(tzvp);
+        tzp->tz_minuteswest = 0;
+        tzp->tz_dsttime = 0;
+    }
 
-	return 0;
+    return 0;
 }
 #ifdef __cplusplus
 }

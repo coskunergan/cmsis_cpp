@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,77 +28,78 @@
 #ifndef CPP_CMSIS_OS_H_
 #define CPP_CMSIS_OS_H_
 
+#include <cstdint>
 #include <functional>
 
 namespace cmsis
 {
-	/// Kernel Information and Control.
-	namespace kernel
-	{
-		/// Get RTOS Kernel version.
-		/// \return string that contains version information.
-		/// \exception In case of failure, throws a std::system_error exception.
-		const char* version();
+    /// Kernel Information and Control.
+    namespace kernel
+    {
+        /// Get RTOS Kernel version.
+        /// \return string that contains version information.
+        /// \exception In case of failure, throws a std::system_error exception.
+        const char *version();
 
-		/// Get RTOS Kernel tick frequency in Hz.
-		/// \return the frequency of the current RTOS kernel tick.
-		/// \exception In case of failure, throws a std::system_error exception.
-		uint32_t tick_frequency();
+        /// Get RTOS Kernel tick frequency in Hz.
+        /// \return the frequency of the current RTOS kernel tick.
+        /// \exception In case of failure, throws a std::system_error exception.
+        uint32_t tick_frequency();
 
-		/// Initialize the RTOS Kernel.
-		/// \exception In case of failure, throws a std::system_error exception.
-		void initialize();
+        /// Initialize the RTOS Kernel.
+        /// \exception In case of failure, throws a std::system_error exception.
+        void initialize();
 
-		/// Start the RTOS Kernel scheduler.
-		/// In case of success, this function will never returns.
-		/// \exception In case of failure, throws a std::system_error exception.
-		void start();
+        /// Start the RTOS Kernel scheduler.
+        /// In case of success, this function will never returns.
+        /// \exception In case of failure, throws a std::system_error exception.
+        void start();
 
-		/// Suspends the RTOS kernel scheduler and thus enables sleep modes.
-		uint32_t suspend() noexcept;
+        /// Suspends the RTOS kernel scheduler and thus enables sleep modes.
+        uint32_t suspend() noexcept;
 
-		/// Enables the RTOS kernel scheduler and thus wakes up the system from sleep mode.
-		void resume(uint32_t sleep_ticks)  noexcept;
+        /// Enables the RTOS kernel scheduler and thus wakes up the system from sleep mode.
+        void resume(uint32_t sleep_ticks) noexcept;
 
-		/// Start the idle handler called by the idle thread.
-		/// \exception In case of failure, throws a std::system_error exception.
-		void set_idle_handler(std::function<void()>&& handler);
-	}
+        /// Start the idle handler called by the idle thread.
+        /// \exception In case of failure, throws a std::system_error exception.
+        void set_idle_handler(std::function<void()> &&handler);
+    } // namespace kernel
 
-	namespace core
-	{
-		/// Get system core clock frequency in Hz.
-		/// \return the frequency of the current system core clock.
-		/// \exception In case of failure, throws a std::system_error exception.
-		uint32_t clock_frequency();
-	}
+    namespace core
+    {
+        /// Get system core clock frequency in Hz.
+        /// \return the frequency of the current system core clock.
+        /// \exception In case of failure, throws a std::system_error exception.
+        uint32_t clock_frequency();
+    } // namespace core
 
-	/// Management of the RTOS Kernel scheduler.
-	/// This class is conform to the C++ BasicLockable concept, and can be used by std::lock_guard.
-	class dispatch
-	{
-	public:
-		dispatch();
-		~dispatch() = default;
+    /// Management of the RTOS Kernel scheduler.
+    /// This class is conform to the C++ BasicLockable concept, and can be used by std::lock_guard.
+    class dispatch
+    {
+    public:
+        dispatch();
+        ~dispatch() = default;
 
-		dispatch(const dispatch&) = delete;
-		dispatch& operator=(const dispatch&) = delete;
+        dispatch(const dispatch &) = delete;
+        dispatch &operator=(const dispatch &) = delete;
 
-		void lock();
-		void unlock();
+        void lock();
+        void unlock();
 
-		static bool locked();
+        static bool locked();
 
-	private:
-		int32_t m_previous_lock_state;
-	};
-}
+    private:
+        int32_t m_previous_lock_state;
+    };
+} // namespace cmsis
 
 namespace sys
 {
-	namespace kernel = cmsis::kernel;
-	namespace core = cmsis::core;
-	using dispatch = cmsis::dispatch;
-}
+    namespace kernel = cmsis::kernel;
+    namespace core = cmsis::core;
+    using dispatch = cmsis::dispatch;
+} // namespace sys
 
 #endif // CPP_CMSIS_OS_H_

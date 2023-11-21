@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,96 +31,97 @@
 
 namespace cmsis
 {
-	namespace internal
-	{
-		base_timed_mutex::base_timed_mutex(const char* name, bool recursive) :
-			m_id(0)
-		{
-			osMutexAttr_t Mutex_attr = { name, osMutexPrioInherit, NULL, 0 };
-			if (recursive)
-				Mutex_attr.attr_bits |= osMutexRecursive;
-			
-			m_id = osMutexNew(&Mutex_attr);	
-			if (m_id == 0)
-#ifdef __cpp_exceptions
-				throw std::system_error(osError, os_category(), "osMutexNew");
-#else
-				std::terminate();
-#endif
-		}
+    namespace internal
+    {
+        base_timed_mutex::base_timed_mutex(const char *name, bool recursive) :
+            m_id(0)
+        {
+            osMutexAttr_t Mutex_attr = {name, osMutexPrioInherit, NULL, 0};
+            if(recursive)
+                Mutex_attr.attr_bits |= osMutexRecursive;
 
-		base_timed_mutex::~base_timed_mutex() noexcept(false)
-		{
-			osStatus_t sta = osMutexDelete(m_id);
-			if (sta != osOK)
+            m_id = osMutexNew(&Mutex_attr);
+            if(m_id == 0)
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osMutexDelete", m_id));
+                throw std::system_error(osError, os_category(), "osMutexNew");
 #else
-				std::terminate();
+                std::terminate();
 #endif
-		}
+        }
 
-		void base_timed_mutex::lock()
-		{
-			osStatus_t sta = osMutexAcquire(m_id, osWaitForever);
-			if (sta != osOK)
+        base_timed_mutex::~base_timed_mutex() noexcept(false)
+        {
+            osStatus_t sta = osMutexDelete(m_id);
+            if(sta != osOK)
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osMutexAcquire", m_id));
+                throw std::system_error(sta, os_category(), internal::str_error("osMutexDelete", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
-		}
+        }
 
-		void base_timed_mutex::unlock()
-		{
-			osStatus_t sta = osMutexRelease(m_id);
-			if (sta != osOK)
+        void base_timed_mutex::lock()
+        {
+            osStatus_t sta = osMutexAcquire(m_id, osWaitForever);
+            if(sta != osOK)
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osMutexRelease", m_id));
+                throw std::system_error(sta, os_category(), internal::str_error("osMutexAcquire", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
-		}
+        }
 
-		bool base_timed_mutex::try_lock()
-		{
-			osStatus_t sta = osMutexAcquire(m_id, 0);
-			if (sta != osOK && sta != osErrorTimeout)
+        void base_timed_mutex::unlock()
+        {
+            osStatus_t sta = osMutexRelease(m_id);
+            if(sta != osOK)
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osMutexAcquire", m_id));
+                throw std::system_error(sta, os_category(), internal::str_error("osMutexRelease", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
+        }
 
-			return (sta != osErrorTimeout);
-		}
-		
-		bool base_timed_mutex::try_lock_for_usec(std::chrono::microseconds usec)
-		{
-			if (usec < std::chrono::microseconds::zero())
+        bool base_timed_mutex::try_lock()
+        {
+            osStatus_t sta = osMutexAcquire(m_id, 0);
+            if(sta != osOK && sta != osErrorTimeout)
 #ifdef __cpp_exceptions
-				throw std::system_error(osErrorParameter, os_category(), "base_timed_mutex: negative timer");
+                throw std::system_error(sta, os_category(), internal::str_error("osMutexAcquire", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
 
-			uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
-			if (timeout > std::numeric_limits<uint32_t>::max())
-				timeout = osWaitForever;
-			
-			osStatus_t sta = osMutexAcquire(m_id, timeout);
-			if (timeout == 0 && sta == osErrorResource)
-				return false;
+            return (sta != osErrorTimeout);
+        }
 
-			if (sta != osOK && sta != osErrorTimeout)
+        bool base_timed_mutex::try_lock_for_usec(std::chrono::microseconds usec)
+        {
+            if(usec < std::chrono::microseconds::zero())
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osMutexAcquire", m_id));
+                throw std::system_error(osErrorParameter, os_category(), "base_timed_mutex: negative timer");
 #else
-				std::terminate();
+                std::terminate();
 #endif
 
-			return (sta != osErrorTimeout);
-		}
-	}
-}
+            uint32_t timeout = static_cast<uint32_t>(
+                                   (usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) /
+                                   std::chrono::microseconds::period::den);
+            if(timeout > std::numeric_limits<uint32_t>::max())
+                timeout = osWaitForever;
 
+            osStatus_t sta = osMutexAcquire(m_id, timeout);
+            if(timeout == 0 && sta == osErrorResource)
+                return false;
+
+            if(sta != osOK && sta != osErrorTimeout)
+#ifdef __cpp_exceptions
+                throw std::system_error(sta, os_category(), internal::str_error("osMutexAcquire", m_id));
+#else
+                std::terminate();
+#endif
+
+            return (sta != osErrorTimeout);
+        }
+    } // namespace internal
+} // namespace cmsis

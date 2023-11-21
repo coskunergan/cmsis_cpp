@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,45 +28,52 @@
 #ifndef CPP_CMSIS_TIMER_H_INCLUDED
 #define CPP_CMSIS_TIMER_H_INCLUDED
 
-#include <functional>
 #include <chrono>
+#include <functional>
 #include <memory>
 
 namespace cmsis
 {
-	class cmsis_timer;
+    class cmsis_timer;
 
-	class timer
-	{
-	public:
-		typedef std::function<bool()> callback_t; // If callback return false, the timer is stopped
-		enum class timer_type_t { once, periodic };
+    class timer
+    {
+    public:
+        typedef std::function<bool()> callback_t; // If callback return false, the timer is stopped
+        enum class timer_type_t
+        {
+            once,
+            periodic
+        };
 
-		timer();
-		timer(std::chrono::microseconds usec, callback_t&& function, timer_type_t type = timer_type_t::periodic);
-		timer(const timer&) = delete;
-		timer(timer&& t);
-		~timer();
+        timer();
+        timer(std::chrono::microseconds usec, callback_t &&function, timer_type_t type = timer_type_t::periodic);
+        timer(const timer &) = delete;
+        timer(timer &&t);
+        ~timer();
 
-		void swap(timer& t) noexcept;
+        void swap(timer &t) noexcept;
 
-		timer& operator=(const timer&) = delete;
-		timer& operator=(timer&& t);
+        timer &operator=(const timer &) = delete;
+        timer &operator=(timer &&t);
 
-		void start();
-		void stop();
-		bool running() const;
+        void start();
+        void stop();
+        bool running() const;
 
-	private:
-		std::unique_ptr<cmsis_timer> m_pImplTimer;
-	};
+    private:
+        std::unique_ptr<cmsis_timer> m_pImplTimer;
+    };
 
-	inline void	swap(timer& __x, timer& __y) noexcept { __x.swap(__y); }
-}
+    inline void swap(timer &__x, timer &__y) noexcept
+    {
+        __x.swap(__y);
+    }
+} // namespace cmsis
 
 namespace sys
 {
-	using timer = cmsis::timer;
+    using timer = cmsis::timer;
 }
 
 #endif // CPP_CMSIS_TIMER_H_INCLUDED

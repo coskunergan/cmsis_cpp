@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,343 +35,349 @@
 
 namespace cmsis
 {
-	class thread_impl
-	{
-	public:
-		thread_impl(const thread::attributes& attr, std::unique_ptr<thread::CallableBase> targetfunc) :
-			m_id(0),
-			m_function(std::move(targetfunc)),
-			m_detached(false)
-		{
-			osThreadAttr_t osAttr = {};
-			osAttr.attr_bits = osThreadJoinable;
-			osAttr.name = attr.name;
-			osAttr.stack_mem = attr.stack_mem;
-			osAttr.stack_size = attr.stack_size;
-			osAttr.priority = static_cast<osPriority_t>(attr.priority);
+    class thread_impl
+    {
+    public:
+        thread_impl(const thread::attributes &attr, std::unique_ptr<thread::CallableBase> targetfunc) :
+            m_id(0),
+            m_function(std::move(targetfunc)),
+            m_detached(false)
+        {
+            osThreadAttr_t osAttr = {};
+            osAttr.attr_bits = osThreadJoinable;
+            osAttr.name = attr.name;
+            osAttr.stack_mem = attr.stack_mem;
+            osAttr.stack_size = attr.stack_size;
+            osAttr.priority = static_cast<osPriority_t>(attr.priority);
 
-			if (osAttr.priority == osPriorityNone)
-				osAttr.priority = osPriorityNormal;
+            if(osAttr.priority == osPriorityNone)
+                osAttr.priority = osPriorityNormal;
 
-			m_id = osThreadNew(runnableMethodStatic, this, &osAttr);
-			if (m_id == 0)
-			{
+            m_id = osThreadNew(runnableMethodStatic, this, &osAttr);
+            if(m_id == 0)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(osError, os_category(), "osThreadNew");
+                throw std::system_error(osError, os_category(), "osThreadNew");
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
-		}
+            }
+        }
 
-		thread_impl(const thread_impl&) = delete;
-		thread_impl& operator=(const thread_impl&) = delete;
+        thread_impl(const thread_impl &) = delete;
+        thread_impl &operator=(const thread_impl &) = delete;
 
-		~thread_impl()
-		{
-			osThreadTerminate(m_id);
-		}
+        ~thread_impl()
+        {
+            osThreadTerminate(m_id);
+        }
 
-		void join()
-		{
-			osStatus_t sta = osThreadJoin(m_id);
-			if (sta != osOK)
-			{
+        void join()
+        {
+            osStatus_t sta = osThreadJoin(m_id);
+            if(sta != osOK)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osThreadJoin", m_id));
+                throw std::system_error(sta, os_category(), internal::str_error("osThreadJoin", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
+            }
 
-			m_detached.store(true);
-		}
+            m_detached.store(true);
+        }
 
-		void detach()
-		{
-			osStatus_t sta = osThreadDetach(m_id);
-			if (sta != osOK)
-			{
+        void detach()
+        {
+            osStatus_t sta = osThreadDetach(m_id);
+            if(sta != osOK)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osThreadDetach", m_id));
+                throw std::system_error(sta, os_category(), internal::str_error("osThreadDetach", m_id));
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
+            }
 
-			m_detached.store(true);
-		}
+            m_detached.store(true);
+        }
 
-		bool joinable() const
-		{
-			return !m_detached.load();
-		}
+        bool joinable() const
+        {
+            return !m_detached.load();
+        }
 
-		osThreadId_t get_id() const noexcept { return m_id; }
+        osThreadId_t get_id() const noexcept
+        {
+            return m_id;
+        }
 
-	private:
-		static void runnableMethodStatic(void* pVThread)
-		{
+    private:
+        static void runnableMethodStatic(void *pVThread)
+        {
 #ifdef __cpp_exceptions
-			try
-			{
+            try
+            {
 #endif // __cpp_exceptions
-				thread_impl* pThreadImpl = reinterpret_cast<thread_impl*>(pVThread);
-				pThreadImpl->m_function->run();
+                thread_impl *pThreadImpl = reinterpret_cast<thread_impl *>(pVThread);
+                pThreadImpl->m_function->run();
 #ifdef __cpp_exceptions
-			}
+            }
 #ifdef __GNUC__
-			catch(const abi::__forced_unwind&)
-			{
-				throw;
-			}
+            catch(const abi::__forced_unwind &)
+            {
+                throw;
+            }
 #endif // __GNUC__
-			catch(...)
-			{
-				std::terminate();
-			}
+            catch(...)
+            {
+                std::terminate();
+            }
 #endif // __cpp_exceptions
 
-			osThreadExit();
-		}
+            osThreadExit();
+        }
 
-	private:
-		osThreadId_t m_id; // task identifier
-		std::unique_ptr<thread::CallableBase> m_function;
-		std::atomic_bool m_detached;
-	};
+    private:
+        osThreadId_t m_id; // task identifier
+        std::unique_ptr<thread::CallableBase> m_function;
+        std::atomic_bool m_detached;
+    };
 
-	thread::thread() noexcept :
-		m_pThread(nullptr)
-	{
-	}
+    thread::thread() noexcept :
+        m_pThread(nullptr)
+    {}
 
-	thread::thread(const attributes& attr, std::unique_ptr<thread::CallableBase> base) :
-		m_pThread(std::make_unique<thread_impl>(attr, std::move(base)))
-	{
-	}
+    thread::thread(const attributes &attr, std::unique_ptr<thread::CallableBase> base) :
+        m_pThread(std::make_unique<thread_impl>(attr, std::move(base)))
+    {}
 
-	thread::thread(thread&& __t) noexcept : m_pThread(std::move(__t.m_pThread))
-	{
-	}
+    thread::thread(thread &&__t) noexcept :
+        m_pThread(std::move(__t.m_pThread))
+    {}
 
-	thread::~thread()
-	{
-		if (joinable())
-			std::terminate();
-	}
+    thread::~thread()
+    {
+        if(joinable())
+            std::terminate();
+    }
 
-	thread& thread::operator=(thread&& __t)
-	{
-		if (joinable())
-			std::terminate();
+    thread &thread::operator=(thread &&__t)
+    {
+        if(joinable())
+            std::terminate();
 
-		swap(__t);
-		return *this;
-	}
+        swap(__t);
+        return *this;
+    }
 
-	void thread::join()
-	{
-		if (!joinable())
-		{
+    void thread::join()
+    {
+        if(!joinable())
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(std::make_error_code(std::errc::invalid_argument), "thread::join"); // task is detached (aka auto-delete)
+            throw std::system_error(
+                std::make_error_code(std::errc::invalid_argument),
+                "thread::join"); // task is detached (aka auto-delete)
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
+        }
 
-		if (thread::id(m_pThread->get_id()) == cmsis::this_thread::get_id())
-		{
+        if(thread::id(m_pThread->get_id()) == cmsis::this_thread::get_id())
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(std::make_error_code(std::errc::resource_deadlock_would_occur), "thread::join");
+            throw std::system_error(std::make_error_code(std::errc::resource_deadlock_would_occur), "thread::join");
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
+        }
 
-		m_pThread->join();
-	}
+        m_pThread->join();
+    }
 
-	bool thread::joinable() const
-	{
-		return m_pThread && m_pThread->joinable();
-	}
+    bool thread::joinable() const
+    {
+        return m_pThread && m_pThread->joinable();
+    }
 
-	void thread::detach()
-	{
-		if (!joinable())
-		{
+    void thread::detach()
+    {
+        if(!joinable())
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(std::make_error_code(std::errc::invalid_argument), "thread::detach"); // task is detached (aka auto-delete)
+            throw std::system_error(
+                std::make_error_code(std::errc::invalid_argument),
+                "thread::detach"); // task is detached (aka auto-delete)
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
+        }
 
-		m_pThread->detach();
-	}
+        m_pThread->detach();
+    }
 
-	thread::id thread::get_id() const
-	{
-		return m_pThread ? thread::id(m_pThread->get_id()) : thread::id();
-	}
+    thread::id thread::get_id() const
+    {
+        return m_pThread ? thread::id(m_pThread->get_id()) : thread::id();
+    }
 
-	thread::native_handle_type thread::native_handle()
-	{
-		return get_id().m_tid;
-	}
+    thread::native_handle_type thread::native_handle()
+    {
+        return get_id().m_tid;
+    }
 
-	unsigned int thread::hardware_concurrency() noexcept
-	{
-		return 255;
-	}
+    unsigned int thread::hardware_concurrency() noexcept
+    {
+        return 255;
+    }
 
-	void thread::swap(thread& __t)
-	{
-		m_pThread.swap(__t.m_pThread);
-	}
+    void thread::swap(thread &__t)
+    {
+        m_pThread.swap(__t.m_pThread);
+    }
 
-	void thread::suspend()
-	{
-		osStatus_t sta = osThreadSuspend(get_id().m_tid);
-		if (sta != osOK)
-		{
+    void thread::suspend()
+    {
+        osStatus_t sta = osThreadSuspend(get_id().m_tid);
+        if(sta != osOK)
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(sta, os_category(), internal::str_error("osThreadSuspend", get_id().m_tid));
+            throw std::system_error(sta, os_category(), internal::str_error("osThreadSuspend", get_id().m_tid));
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
-	}
+        }
+    }
 
-	void thread::resume()
-	{
-		osStatus_t sta = osThreadResume(get_id().m_tid);
-		if (sta != osOK)
-		{
+    void thread::resume()
+    {
+        osStatus_t sta = osThreadResume(get_id().m_tid);
+        if(sta != osOK)
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(sta, os_category(), internal::str_error("osThreadResume", get_id().m_tid));
+            throw std::system_error(sta, os_category(), internal::str_error("osThreadResume", get_id().m_tid));
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
-	}
+        }
+    }
 
-	void thread::priority(size_t prio)
-	{
-		osStatus_t sta = osThreadSetPriority(get_id().m_tid, static_cast<osPriority_t>(prio));
-		if (sta != osOK)
-		{
+    void thread::priority(size_t prio)
+    {
+        osStatus_t sta = osThreadSetPriority(get_id().m_tid, static_cast<osPriority_t>(prio));
+        if(sta != osOK)
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(sta, os_category(), internal::str_error("osThreadSetPriority", get_id().m_tid));
+            throw std::system_error(sta, os_category(), internal::str_error("osThreadSetPriority", get_id().m_tid));
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
-	}
+        }
+    }
 
-	size_t thread::priority() const
-	{
-		osPriority_t prio = osThreadGetPriority(get_id().m_tid);
-		if (prio == osPriorityError)
-		{
+    size_t thread::priority() const
+    {
+        osPriority_t prio = osThreadGetPriority(get_id().m_tid);
+        if(prio == osPriorityError)
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(osError, os_category(), internal::str_error("osThreadGetPriority", get_id().m_tid));
+            throw std::system_error(osError, os_category(), internal::str_error("osThreadGetPriority", get_id().m_tid));
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
+        }
 
-		return  static_cast<size_t>(prio);
-	}
+        return static_cast<size_t>(prio);
+    }
 
-	const char* thread::name() const noexcept
-	{
-		return osThreadGetName(get_id().m_tid);
-	}
+    const char *thread::name() const noexcept
+    {
+        return osThreadGetName(get_id().m_tid);
+    }
 
-
-	bool thread::is_blocked() const
-	{
-		osThreadState_t state = osThreadGetState(get_id().m_tid);
-		if (state == osThreadError)
-		{
+    bool thread::is_blocked() const
+    {
+        osThreadState_t state = osThreadGetState(get_id().m_tid);
+        if(state == osThreadError)
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(osError, os_category(), internal::str_error("osThreadGetState", get_id().m_tid));
+            throw std::system_error(osError, os_category(), internal::str_error("osThreadGetState", get_id().m_tid));
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
+        }
 
-		return (state == osThreadBlocked);
-	}
+        return (state == osThreadBlocked);
+    }
 
-	size_t thread::stack_size() const noexcept
-	{
-		return static_cast<size_t>(osThreadGetStackSize(get_id().m_tid));
-	}
+    size_t thread::stack_size() const noexcept
+    {
+        return static_cast<size_t>(osThreadGetStackSize(get_id().m_tid));
+    }
 
-	size_t thread::stack_space() const noexcept
-	{
-		return static_cast<size_t>(osThreadGetStackSpace(get_id().m_tid));
-	}
+    size_t thread::stack_space() const noexcept
+    {
+        return static_cast<size_t>(osThreadGetStackSpace(get_id().m_tid));
+    }
 
-	namespace this_thread
-	{
-		void yield()
-		{
-			osStatus_t sta = osThreadYield();
-			if (sta != osOK)
-			{
+    namespace this_thread
+    {
+        void yield()
+        {
+            osStatus_t sta = osThreadYield();
+            if(sta != osOK)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), "osThreadYield");
+                throw std::system_error(sta, os_category(), "osThreadYield");
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
-		}
+            }
+        }
 
-		thread::id get_id()
-		{
-			osThreadId_t tid = osThreadGetId();
+        thread::id get_id()
+        {
+            osThreadId_t tid = osThreadGetId();
 #ifdef __cpp_exceptions
-			if (tid == NULL)
-				throw std::system_error(osErrorResource, os_category(), "osThreadGetId");
+            if(tid == NULL)
+                throw std::system_error(osErrorResource, os_category(), "osThreadGetId");
 #endif
-			return thread::id(tid);
-		}
+            return thread::id(tid);
+        }
 
-		namespace internal
-		{
-			void sleep_for_usec (std::chrono::microseconds usec)
-			{
-				if (usec > std::chrono::microseconds::zero())
-				{
-					uint32_t ticks = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
-					if (ticks > std::numeric_limits<uint32_t>::max())
-						ticks = osWaitForever;
+        namespace internal
+        {
+            void sleep_for_usec(std::chrono::microseconds usec)
+            {
+                if(usec > std::chrono::microseconds::zero())
+                {
+                    uint32_t ticks = static_cast<uint32_t>(
+                                         (usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) /
+                                         std::chrono::microseconds::period::den);
+                    if(ticks > std::numeric_limits<uint32_t>::max())
+                        ticks = osWaitForever;
 
-					osStatus_t sta = osDelay(ticks);
-					if (sta != osOK)
-					{
+                    osStatus_t sta = osDelay(ticks);
+                    if(sta != osOK)
+                    {
 #ifdef __cpp_exceptions
-						throw std::system_error(sta, os_category(), "osDelay");
+                        throw std::system_error(sta, os_category(), "osDelay");
 #else
-						std::terminate();
+                        std::terminate();
 #endif
-					}
-				}
-			}
-		}
-	}
-}
+                    }
+                }
+            }
+        } // namespace internal
+    }     // namespace this_thread
+} // namespace cmsis
 
 #if !defined(OS_USE_SEMIHOSTING)
 
 extern "C" int _getpid(void)
 {
-	return reinterpret_cast<int>(osThreadGetId());
+    return reinterpret_cast<int>(osThreadGetId());
 }
 
 #endif // !OS_USE_SEMIHOSTING

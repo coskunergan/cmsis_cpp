@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,43 +32,43 @@
 
 namespace cmsis
 {
-	namespace chrono
-	{
-		struct system_clock
-		{
-			typedef std::chrono::microseconds duration;
-			typedef duration::rep rep;
-			typedef duration::period period;
-			typedef std::chrono::time_point<system_clock, duration> time_point;
-			static constexpr bool is_steady = true;
+    namespace chrono
+    {
+        struct system_clock
+        {
+            typedef std::chrono::microseconds duration;
+            typedef duration::rep rep;
+            typedef duration::period period;
+            typedef std::chrono::time_point<system_clock, duration> time_point;
+            static constexpr bool is_steady = true;
 
-			static_assert(system_clock::duration::min()
-				< system_clock::duration::zero(),
-				"a clock's minimum duration cannot be less than its epoch");
+            static_assert(
+                system_clock::duration::min() < system_clock::duration::zero(),
+                "a clock's minimum duration cannot be less than its epoch");
 
-			static time_point now() noexcept;
-			static std::time_t to_time_t(const time_point& t);
-			static time_point from_time_t(std::time_t t);
-		};
+            static time_point now() noexcept;
+            static std::time_t to_time_t(const time_point &t);
+            static time_point from_time_t(std::time_t t);
+        };
 
-		struct high_resolution_clock
-		{
-			typedef std::chrono::nanoseconds duration;
-			typedef duration::rep rep;
-			typedef duration::period period;
-			typedef std::chrono::time_point<high_resolution_clock, duration> time_point;
-			static constexpr bool is_steady = true;
+        struct high_resolution_clock
+        {
+            typedef std::chrono::nanoseconds duration;
+            typedef duration::rep rep;
+            typedef duration::period period;
+            typedef std::chrono::time_point<high_resolution_clock, duration> time_point;
+            static constexpr bool is_steady = true;
 
-			static time_point now() noexcept;
-		};
+            static time_point now() noexcept;
+        };
 
-		using steady_clock = high_resolution_clock;
-	}
-}
+        using steady_clock = high_resolution_clock;
+    } // namespace chrono
+} // namespace cmsis
 
 namespace sys
 {
-	namespace chrono = cmsis::chrono;
+    namespace chrono = cmsis::chrono;
 }
 
 #endif // CMSIS_CHRONO_H_

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,10 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
 #include "OS.h"
 #include "OSException.h"
 #include "cmsis_os2.h"
+#include <string>
 
 extern "C" uint32_t SystemCoreClock;         /**< System Clock Frequency (Core Clock) */
 extern "C" void SystemCoreClockUpdate(void); /**< Updates the variable SystemCoreClock */
@@ -37,169 +37,169 @@ std::function<void()> idleHandler;
 
 namespace cmsis
 {
-	namespace kernel
-	{
-		const char* version()
-		{
-			static char infobuf[100];
-			osVersion_t osv;
+    namespace kernel
+    {
+        const char *version()
+        {
+            static char infobuf[100];
+            osVersion_t osv;
 
-			osStatus_t sta = osKernelGetInfo(&osv, infobuf, sizeof(infobuf));
-			if(sta != osOK)
-			{
+            osStatus_t sta = osKernelGetInfo(&osv, infobuf, sizeof(infobuf));
+            if(sta != osOK)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), "osKernelGetInfo");
+                throw std::system_error(sta, os_category(), "osKernelGetInfo");
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
+            }
 
-			return infobuf;
-		}
+            return infobuf;
+        }
 
-		uint32_t tick_frequency()
-		{
-			uint32_t tick = osKernelGetTickFreq();
-			if (!tick)
-			{
+        uint32_t tick_frequency()
+        {
+            uint32_t tick = osKernelGetTickFreq();
+            if(!tick)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(osError, os_category(), "osKernelGetTickFreq");
+                throw std::system_error(osError, os_category(), "osKernelGetTickFreq");
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
+            }
 
-			return tick;
-		}
+            return tick;
+        }
 
-		/**
-		 * Initialize the RTOS Kernel.
-		 * @throw std::system_error if an error occurs
-		 */
-		void initialize()
-		{
-			if (osKernelGetState() == osKernelInactive)
-			{
-				osStatus_t sta = osKernelInitialize();
-				if (sta != osOK)
-				{
+        /**
+         * Initialize the RTOS Kernel.
+         * @throw std::system_error if an error occurs
+         */
+        void initialize()
+        {
+            if(osKernelGetState() == osKernelInactive)
+            {
+                osStatus_t sta = osKernelInitialize();
+                if(sta != osOK)
+                {
 #ifdef __cpp_exceptions
-					throw std::system_error(sta, os_category(), "osKernelInitialize");
+                    throw std::system_error(sta, os_category(), "osKernelInitialize");
 #else
-					std::terminate();
+                    std::terminate();
 #endif
-				}
-			}
-		}
+                }
+            }
+        }
 
-		/**
-		 * Start the RTOS Kernel scheduler. In case of success, this function never returns.
-		 * @throw std::system_error if an error occurs
-		 */
-		void start()
-		{
-			osStatus_t sta = osKernelStart();
-			if (sta != osOK)
-			{
+        /**
+         * Start the RTOS Kernel scheduler. In case of success, this function never returns.
+         * @throw std::system_error if an error occurs
+         */
+        void start()
+        {
+            osStatus_t sta = osKernelStart();
+            if(sta != osOK)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), "osKernelStart");
+                throw std::system_error(sta, os_category(), "osKernelStart");
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
-		}
+            }
+        }
 
-		/**
-		 * Suspends the RTOS kernel scheduler and thus enables sleep modes.
-		 * Returns time in ticks, for how long the system can sleep or power-down.
-		 */
-		uint32_t suspend() noexcept
-		{
-			return osKernelSuspend();
-		}
+        /**
+         * Suspends the RTOS kernel scheduler and thus enables sleep modes.
+         * Returns time in ticks, for how long the system can sleep or power-down.
+         */
+        uint32_t suspend() noexcept
+        {
+            return osKernelSuspend();
+        }
 
-		/**
-		 * Enables the RTOS kernel scheduler and thus wakes up the system from sleep mode.
-		 * sleep_ticks: time in ticks for how long the system was in sleep or power-down mode.
-		 */
-		void resume(uint32_t sleep_ticks) noexcept
-		{
-			return osKernelResume(sleep_ticks);
-		}
+        /**
+         * Enables the RTOS kernel scheduler and thus wakes up the system from sleep mode.
+         * sleep_ticks: time in ticks for how long the system was in sleep or power-down mode.
+         */
+        void resume(uint32_t sleep_ticks) noexcept
+        {
+            return osKernelResume(sleep_ticks);
+        }
 
-		/**
-		 * Start the idle handler called by the idle thread.
-		 * @throw std::system_error if an error occurs
-		 */
-		void set_idle_handler(std::function<void()>&& handler)
-		{
-			idleHandler = std::move(handler);
-		}
-	}
+        /**
+         * Start the idle handler called by the idle thread.
+         * @throw std::system_error if an error occurs
+         */
+        void set_idle_handler(std::function<void()> &&handler)
+        {
+            idleHandler = std::move(handler);
+        }
+    } // namespace kernel
 
-	namespace core
-	{
-		uint32_t clock_frequency()
-		{
-			SystemCoreClockUpdate();
-			if (!SystemCoreClock)
-			{
+    namespace core
+    {
+        uint32_t clock_frequency()
+        {
+            SystemCoreClockUpdate();
+            if(!SystemCoreClock)
+            {
 #ifdef __cpp_exceptions
-				throw std::system_error(osError, os_category(), "SystemCoreClock");
+                throw std::system_error(osError, os_category(), "SystemCoreClock");
 #else
-				std::terminate();
+                std::terminate();
 #endif
-			}
+            }
 
-			return SystemCoreClock;
-		}
-	}
+            return SystemCoreClock;
+        }
+    } // namespace core
 
-	/**
-	 * Lock / unlock Dispatching.
-	 * @throw std::system_error if an error occurs
-	 */
-	dispatch::dispatch() : m_previous_lock_state(osError)
-	{
-	}
+    /**
+     * Lock / unlock Dispatching.
+     * @throw std::system_error if an error occurs
+     */
+    dispatch::dispatch() :
+        m_previous_lock_state(osError)
+    {}
 
-	void dispatch::lock()
-	{
-		m_previous_lock_state = osKernelLock();
-		if (m_previous_lock_state < 0)
-		{
+    void dispatch::lock()
+    {
+        m_previous_lock_state = osKernelLock();
+        if(m_previous_lock_state < 0)
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(m_previous_lock_state, os_category(), "osKernelLock");
+            throw std::system_error(m_previous_lock_state, os_category(), "osKernelLock");
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
-	}
+        }
+    }
 
-	void dispatch::unlock()
-	{
-		if (m_previous_lock_state < 0)
-		{
+    void dispatch::unlock()
+    {
+        if(m_previous_lock_state < 0)
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(m_previous_lock_state, os_category(), "Bad kernel previous state");
+            throw std::system_error(m_previous_lock_state, os_category(), "Bad kernel previous state");
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
+        }
 
-		m_previous_lock_state = osKernelRestoreLock(m_previous_lock_state);
-		if (m_previous_lock_state < 0)
-		{
+        m_previous_lock_state = osKernelRestoreLock(m_previous_lock_state);
+        if(m_previous_lock_state < 0)
+        {
 #ifdef __cpp_exceptions
-			throw std::system_error(m_previous_lock_state, os_category(), "osKernelRestoreLock");
+            throw std::system_error(m_previous_lock_state, os_category(), "osKernelRestoreLock");
 #else
-			std::terminate();
+            std::terminate();
 #endif
-		}
-	}
+        }
+    }
 
-	bool dispatch::locked()
-	{
-		return (osKernelGetState() == osKernelLocked);
-	}
-}
+    bool dispatch::locked()
+    {
+        return (osKernelGetState() == osKernelLocked);
+    }
+} // namespace cmsis

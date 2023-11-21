@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,71 +29,85 @@
 #define CPP_CMSIS_THREADFLAG_H_
 
 #include "Thread.h"
+#include "WaitFlag.h"
 
 namespace cmsis
 {
-	struct thread_flags
-	{
-		typedef uint32_t mask_type;
+    struct thread_flags
+    {
+        typedef uint32_t mask_type;
 
-		static mask_type set(thread& t, mask_type mask);
-	};
+        static mask_type set(thread &t, mask_type mask);
+    };
 
-	namespace this_thread
-	{
-		class flags
-		{
-		public:
-			typedef uint32_t mask_type;
+    namespace this_thread
+    {
+        class flags
+        {
+        public:
+            typedef uint32_t mask_type;
 
-			enum class status { no_timeout, timeout };
-			enum class wait_flag : unsigned int
-			{
-				any = 1,
-				all = 2,
-				clear = 3
-			};
+            enum class status
+            {
+                no_timeout,
+                timeout
+            };
 
-			static mask_type set(mask_type mask);
-			static mask_type get();
+            static mask_type set(mask_type mask);
+            static mask_type get();
 
-			static mask_type clear(mask_type mask = static_cast<mask_type>(0x7FFFFFFF));
-			static mask_type wait(mask_type mask, wait_flag flg = wait_flag::any);
+            static mask_type clear(mask_type mask = static_cast<mask_type>(0x7FFFFFFF));
+            static mask_type wait(mask_type mask, wait_flag flg = wait_flag::any);
 
-			template<class Rep, class Period>
-			static status wait_for(mask_type mask, wait_flag flg, const std::chrono::duration<Rep, Period>& rel_time, mask_type& flagValue)
-			{
-				return wait_for_usec(mask, flg, rel_time, flagValue);
-			}
+            template <class Rep, class Period>
+            static status wait_for(
+                mask_type mask,
+                wait_flag flg,
+                const std::chrono::duration<Rep, Period> &rel_time,
+                mask_type &flagValue)
+            {
+                return wait_for_usec(mask, flg, rel_time, flagValue);
+            }
 
-			template<class Rep, class Period>
-			static status wait_for(mask_type mask, const std::chrono::duration<Rep, Period>& rel_time, mask_type& flagValue)
-			{
-				return wait_for(mask, wait_flag::any, rel_time, flagValue);
-			}
+            template <class Rep, class Period>
+            static status
+            wait_for(mask_type mask, const std::chrono::duration<Rep, Period> &rel_time, mask_type &flagValue)
+            {
+                return wait_for(mask, wait_flag::any, rel_time, flagValue);
+            }
 
-			template<class Clock, class Duration>//dont use, this is bad impl. because can be enter an high prio. worker between "Clock::now()" and abs_time !!
-			static status wait_until(mask_type mask, wait_flag flg, const std::chrono::time_point<Clock, Duration>& abs_time, mask_type& flagValue)
-			{				
-				return wait_for(mask, flg, std::chrono::duration_cast<std::chrono::microseconds>(abs_time - Clock::now()), flagValue);
-			}
+            template <class Clock, class Duration>
+            static status wait_until(
+                mask_type mask,
+                wait_flag flg,
+                const std::chrono::time_point<Clock, Duration> &abs_time,
+                mask_type &flagValue)
+            {
+                auto rel_time = abs_time - Clock::now();
+                if(rel_time < std::chrono::microseconds::zero())
+                    return status::timeout;
 
-			template<class Clock, class Duration>
-			static status wait_until(mask_type mask, const std::chrono::time_point<Clock, Duration>& abs_time, mask_type& flagValue)
-			{
-				return wait_until(mask, wait_flag::any, abs_time, flagValue);
-			}
+                return wait_for(mask, flg, rel_time, flagValue);
+            }
 
-		private:
-			static status wait_for_usec(mask_type mask, wait_flag flg, std::chrono::microseconds usec, mask_type& flagValue);
-		};
-	}
-}
+            template <class Clock, class Duration>
+            static status
+            wait_until(mask_type mask, const std::chrono::time_point<Clock, Duration> &abs_time, mask_type &flagValue)
+            {
+                return wait_until(mask, wait_flag::any, abs_time, flagValue);
+            }
+
+        private:
+            static status
+            wait_for_usec(mask_type mask, wait_flag flg, std::chrono::microseconds usec, mask_type &flagValue);
+        };
+    } // namespace this_thread
+} // namespace cmsis
 
 namespace sys
 {
-	using thread_flags = cmsis::thread_flags;
-	namespace this_thread = cmsis::this_thread;
-}
+    using thread_flags = cmsis::thread_flags;
+    namespace this_thread = cmsis::this_thread;
+} // namespace sys
 
 #endif // CPP_CMSIS_THREADFLAG_H_
