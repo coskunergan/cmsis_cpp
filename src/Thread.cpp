@@ -364,11 +364,11 @@ namespace cmsis
 	}     // namespace this_thread
 } // namespace cmsis
 
-#if !defined(OS_USE_SEMIHOSTING)
+/*#if !defined(OS_USE_SEMIHOSTING)
 
 extern "C" int _getpid(void)
 {
 	return reinterpret_cast<int>(osThreadGetId());
 }
 
-#endif // !OS_USE_SEMIHOSTING
+#endif // !OS_USE_SEMIHOSTING*/

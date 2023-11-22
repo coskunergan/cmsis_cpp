@@ -125,8 +125,8 @@ namespace cmsis
 		{
 			cmsis_timer* pTimer = static_cast<cmsis_timer*>(argument);
 
-			if (!pTimer->running())
-				return;
+		   //if (!pTimer->running())
+		   //		return;
 
 			if (!pTimer->m_Callback())
 				pTimer->stop();

@@ -66,7 +66,7 @@ namespace cmsis
 	} // namespace chrono
 } // namespace cmsis
 
-#if !defined(OS_USE_SEMIHOSTING)
+/*#if !defined(OS_USE_SEMIHOSTING)
 #ifdef __cplusplus
 extern "C"
 {
@@ -98,4 +98,4 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
-#endif // !OS_USE_SEMIHOSTING
+#endif // !OS_USE_SEMIHOSTING*/
